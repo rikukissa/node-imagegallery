@@ -6,7 +6,7 @@
     "grunt-cli": ">= 0.1.6"
   },
   "devDependencies": {
-    "grunt": ">= 0.3.x",
+    "grunt": ">= 0.4.x",
     "grunt-contrib-coffee": ">= 0.3.x",
     "grunt-contrib-jade": ">= 0.3.x",
     "grunt-contrib-stylus": ">= 0.3.x",
