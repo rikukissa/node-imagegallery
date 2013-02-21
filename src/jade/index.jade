@@ -1,0 +1,21 @@
+doctype 5
+html
+  head
+    link(rel='stylesheet', type='text/css', href="css/styles.css")
+    script(type='text/javascript', src='js/vendor/require.js')
+    script(type='text/javascript')
+      require.config({
+        baseUrl: "js/modules",
+        paths: {
+          'jquery': 'https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min'
+        }
+      });
+    title HTML5 Template Project
+  body
+    #main
+      h1 Hello Template
+
+    script(type='text/javascript')
+      require(['app'], function(app){ app.main() })
+
+
