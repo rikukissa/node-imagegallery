@@ -32,7 +32,7 @@ module.exports = (grunt) ->
           port: 8000
           base: "public"
 
-    watch:
+    regarde:
       coffee:
         files: ["src/coffee/**/*.coffee"]
         tasks: ["coffee", "reload"]
@@ -56,7 +56,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks "grunt-contrib-jade"
   grunt.loadNpmTasks "grunt-contrib-stylus"
   grunt.loadNpmTasks "grunt-contrib-connect"
-  grunt.loadNpmTasks "grunt-contrib-watch"
+  grunt.loadNpmTasks "grunt-regarde"
 
-  grunt.registerTask "default", ['coffee', 'jade', 'stylus', 'connect', 'reload', 'watch']
-
+  grunt.registerTask "default", ['coffee', 'jade', 'stylus', 'connect', 'reload', 'regarde']
