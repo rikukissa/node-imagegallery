@@ -26,12 +26,6 @@ module.exports = (grunt) ->
         options:
           compress: true
 
-    connect:
-      server:
-        options:
-          port: 8000
-          base: "public"
-
     regarde:
       coffee:
         files: ["src/coffee/**/*.coffee"]
@@ -58,4 +52,4 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks "grunt-contrib-connect"
   grunt.loadNpmTasks "grunt-regarde"
 
-  grunt.registerTask "default", ['coffee', 'jade', 'stylus', 'connect', 'reload', 'regarde']
+  grunt.registerTask "default", ['coffee', 'jade', 'stylus', 'reload', 'regarde']

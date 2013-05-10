@@ -2,10 +2,21 @@ doctype 5
 html
   head
     link(rel='stylesheet', type='text/css', href="css/styles.css")
+    script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='js/vendor/require.js', data-main='js/modules/app')
     meta(charset='utf-8')
     title HTML5 Template Project
   body
+    .overlay.overlay-dark
+      #signin.modal
+        .modal-header
+        .modal-content
+      //- input(type='file', name='post', data-bind='fileUpload: uploaded')
+    
+    #filelist(data-bind='afterRender: organize')
+      div(data-bind='foreach: posts')
+        img.thumb(data-bind='attr: {src: "/static/thumb/" + $data.filename() }')
+    
     script(type='text/javascript')
       require(['app'], function(app){ app.main() })
 
