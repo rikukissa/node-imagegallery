@@ -1,22 +1,218 @@
+
 @import "mixins"
+@font-face
+  font-family Batch 
+  src url('fonts/batch/batch-icons-webfont.ttf'),
+      url('fonts/batch/batch-icons-webfont.svg'),
+      url('fonts/batch/batch-icons-webfont.woff'),
+      url('fonts/batch/batch-icons-webfont.eot')
+
+// Resolutions
+
+// 1240
+// 1040
+// 960
+
 *
   box-sizing border-box
-
+  font-style normal
 html, body
   width 100%
   height 100%
   margin 0
-  background #222
+  font 13px 'Helvetica Neue', Helvetica, Arial
+i
+  font-family Batch
 
-#signin
-  position fixed
-  left 50%
-  top 50%
+hr
+  border 0
+  border-top 1px dashed rgba(0, 0, 0, 0.2)
+  border-bottom 1px dashed rgba(255, 255, 255, 1)
+  margin 30px 0
+.hidden
+  display none
+
+.btn
+  padding 7px 14px
+  display inline-block
+  border-radius 3px
+  text-align center
+  user-select none
+
+  &.btn-green
+    color #fff
+    text-shadow 0 -1px 0 #4c9021
+    background-color #5bb75b
+    background-image -moz-linear-gradient(top, #62c462, #51a351)
+    background-image -webkit-gradient(linear, 0 0, 0 100%, from(#62c462), to(#51a351))
+    background-image -webkit-linear-gradient(top, #62c462, #51a351)
+    background-image -o-linear-gradient(top, #62c462, #51a351)
+    background-image linear-gradient(to bottom, #62c462, #51a351)
+    background-repeat repeat-x
+    box-shadow inset 0 1px 0 0 #96ca6d
+    border-bottom 1px solid #5b992b
+    border 1px solid #63a62f
+    &:hover
+      background-color #76b347
+      background-image -webkit-gradient(linear, left top, left bottom, color-stop(0%, #76b347), color-stop(100%, #5e9e2e))
+      background-image -webkit-linear-gradient(top, #76b347, #5e9e2e)
+      background-image -moz-linear-gradient(top, #76b347, #5e9e2e)
+      background-image -ms-linear-gradient(top, #76b347, #5e9e2e)
+      background-image -o-linear-gradient(top, #76b347, #5e9e2e)
+      background-image linear-gradient(top, #76b347, #5e9e2e)
+      box-shadow inset 0 1px 0 0 #8dbf67
+    &:active
+      border 1px solid #5b992b
+      border-bottom 1px solid #538c27
+      box-shadow inset 0 0 8px 4px #548c29, 0 1px 0 0 #eeeeee
+
+  &:hover
+    cursor pointer
+headerHeight = 50px
+.header
+  height headerHeight
+  background #f0f0f0
+  border-bottom 1px solid #ddd
+  box-shadow inset 0 -1px 1px #fff
+  position relative
+  z-index 100
+  nav
+    float left
+    display inline-block
+    border-right 1px solid #f9f9f9
+    overflow hidden
+    &:last-child
+      float right
+      border-left 1px solid #ddd
+      border-right 0
+      .header-btn:last-child
+        border-right 0
+        padding-right 100px
+  .header-btn
+    height headerHeight
+    line-height headerHeight
+    transition padding 0.6s
+    padding 0 20px
+    font-size 14px
+    color #666
+    float left
+    border-left 1px solid #f9f9f9
+    border-right 1px solid #ddd
+    text-shadow 1px 1px 0 #f9f9f9
+    cursor pointer
+    user-select none
+    span
+      margin-left 10px
+    &:active 
+      color #555
+      border-left 1px solid #ddd
+      box-shadow inset 0 0 2px 1px rgba(0, 0, 0, 0.1), 0 1px 0 0 rgba(0, 0, 0, 0.1)
+#main
+  height 100%
+  position relative
+  transition all 0.6s
+
+body.panel-open 
+  #main
+    padding-right 400px
+  nav:last-child
+    .header-btn:last-child
+      padding-right 20px
+
+.input-item
+  margin 10px 0
+  text-align center
+  font-size 12px
+  color #444
+  label
+    display block
+    color #666
+    font-size 11px
+  input[type="text"],
+  input[type="password"],
+  input[type="email"]
+    width 100%
+    max-width 300px
+    height 30px
+    padding 0 3px
+    margin 3px 0
+    border 1px solid #ccc
+    box-shadow inset 1px 1px 1px rgba(0, 0, 0, 0.05)
+    border-radius 3px
+    &.error
+      background rgba(255, 0, 0, 0.1)
+      border 1px solid rgba(255, 0, 0, 0.3)
+    &.success
+      background rgba(0, 255, 0, 0.1)
+      border 1px solid rgba(0, 255, 0, 0.3)
+  h3
+    font-weight normal
+    font-size 16px
+
+  span.error 
+    color #da4f49
+    i
+      margin-right 5px
+  &.input-upload
+    .btn
+      width 100%
+      padding 10px 0
+      position relative
+    input
+      position absolute
+      width 100%
+      height 100%
+      opacity 0
+      top 0
+      left 0
+  &.input-info
+    text-align left
+    margin-bottom 30px
+    text-shadow 1px 1px 0px #fff
+.panel
+  height 100%
   width 400px
-  height 400px
-  margin-top -200px
-  margin-left -200px
+  padding 60px 20px 20px 20px
+  position fixed
+  right 0
+  top 0
+  overflow auto
+  background url(../img/cream_pixels.png)
+  border-left 1px solid #ddd
+  box-shadow inset 3px 0 3px rgba(0, 0, 0, 0.02)
+  transform translate3d(400px, 0, 0)
+  transition all 0.6s
+body.panel-open .panel
+  transform translate3d(0, 0, 0)
+.btn-open-panel
+  width 50px
+  height 50px
+  line-height 48px
+  text-align center
+  background red
+  position absolute
+  z-index 120
+  top 0
+  right 0
+  font-size 16px
+  border-radius 0 0 0 15px
+  background-color #da4f49
+  background-image -moz-linear-gradient(top, #ee5f5b, #bd362f)
+  background-image -webkit-gradient(linear, 0 0, 0 100%, from(#ee5f5b), to(#bd362f))
+  background-image -webkit-linear-gradient(top, #ee5f5b, #bd362f)
+  background-image -o-linear-gradient(top, #ee5f5b, #bd362f)
+  background-image linear-gradient(to bottom, #ee5f5b, #bd362f)
+  background-repeat repeat-x
+  border 1px solid #802420
+  border-color #bd362f #bd362f #802420
+  border-color rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25)
+  box-shadow inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05)
+  color rgba(0, 0, 0, 0.5)
+  cursor pointer
+  user-select none
+
 .modal
+  width 400px
   background-color #f3f2f1
   border-radius 5px
   box-shadow  0 4px 10px rgba(0,0,0,0.4)
@@ -29,7 +225,12 @@ html, body
     border-top 1px solid #c3c3c3
     border-bottom 1px solid #c3c3c3
     padding 18px 0
-    width 100%    
+    width 100%  
+  &.modal-positioned
+    position absolute
+    right 20px
+    top 20px
+
 .overlay
   position fixed
   top 0
@@ -39,16 +240,61 @@ html, body
   &.overlay-dark
     background rgba(0, 0, 0, 0.75)
 
+#signin
+  position fixed
+  left 50%
+  top 50%
+  width 400px
+  height 400px
+  margin-top -200px
+  margin-left -200px
+
 #filelist
   overflow hidden
+  background #fff
+  .thumbnail
+    width 10%
+    min-width 100px
+    max-width 150px
+
+.post-preview
+  padding 10px
+  text-align center
+  background #202020
   img
-    display block
-    float left
-    transition 0.3s all
-    // transform scale(0.8, 0.8)
-    &:hover
-      z-index 2
-      position relative
-      transform scale(1.2, 1.2)
+    max-width 100%
+.post-info
+  height 40px
+  background #f0f0f0
+  border-bottom 1px solid #ddd
+  line-height 40px
+  padding 0 20px
+  text-align center
+  font-size 11px
+  color #aaa
+.thumbnail
+  float left
+  margin 5px
+  cursor pointer
 iframe 
   display none
+
+
+@media all and (max-width: 1040px)
+  .panel
+    width 300px
+  body.panel-open #main
+    padding-right 300px
+@media all and (max-width: 740px)
+  body.panel-open #main
+    padding-right 0
+    .header nav:last-child .header-btn:last-child
+      border-right 0
+      padding-right 100px
+  .panel
+    width 100%
+    height auto
+    position absolute
+    border-bottom 1px solid #ccc
+    box-shadow 0px 2px 2px rgba(0, 0, 0, 0.1)
+    transform translate3d(0, -100%, 0)

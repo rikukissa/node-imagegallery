@@ -1,22 +1,85 @@
 doctype 5
 html
   head
-    link(rel='stylesheet', type='text/css', href="css/styles.css")
+    link(rel='stylesheet', type='text/css', href="/css/styles.css")
     script(type='text/javascript', src='/socket.io/socket.io.js')
-    script(type='text/javascript', src='js/vendor/require.js', data-main='js/modules/app')
+    script(type='text/javascript', src='/js/vendor/require.js', data-main='/js/modules/app')
     meta(charset='utf-8')
     title HTML5 Template Project
-  body
-    .overlay.overlay-dark
-      #signin.modal
-        .modal-header
-        .modal-content
-      //- input(type='file', name='post', data-bind='fileUpload: uploaded')
-    
-    #filelist(data-bind='afterRender: organize')
-      div(data-bind='foreach: posts')
-        img.thumb(data-bind='attr: {src: "/static/thumb/" + $data.filename() }')
-    
+  body(data-bind='css: { "panel-open": panelOpen}')
+    #main
+      .header
+        nav
+          .header-btn(data-bind='click: enterDefault')
+            i &#xF161;
+          .header-btn
+            i &#xF045;
+        nav(data-bind='with: user')
+          .header-btn(data-bind='click: $root.enterProfile')
+            i &#xF044;
+            span(data-bind='text: $data.username')
+
+      #filelist(data-bind='foreach: posts, visible: currentView() == "default"')
+        img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
+      
+      #post(data-bind='visible: currentView() == "post", with: currentPost')
+        .post-preview
+          a(data-bind='attr: {href: "/static/" + $data.filename() }')
+            img(data-bind='attr: {src: "/static/" + $data.filename() }')
+        .post-info
+          | Lähetetty 
+          span(data-bind='text: moment($data.created()).format("DD.MM.YYYY")')
+          
+
+    .panel
+      form.upload(data-bind='with: user')
+        .input-item.input-upload
+          .btn.btn-green 
+            | Valitse tiedosto
+            input(type='file', name='post', data-bind='fileUpload: $root.uploaded')
+
+      form(data-bind='visible: !user(), submit: signin')
+        .input-item.input-info
+          h3 Kirjaudu sisään
+          | Kirjaudu sisään lähettääksesi kuvia
+        .input-item
+          label Käyttäjätunnus
+          input(type='text', name='username')
+        .input-item
+          label Salasana
+          input(type='password', name='password')
+        .input-item 
+          input.btn.btn-green(type='submit', value='Kirjaudu sisään')
+        .input-item
+          span.error.hidden
+            i &#xF0C1;
+            | Käyttäjätunnus ja salasana eivät täsmää
+        hr
+
+      form(data-bind='visible: !user(), submit: signup')
+        .input-item.input-info
+          h3 Luo uusi käyttäjätunnus
+          | Kirjaudu sisään lähettääksesi kuvia
+        .input-item
+          label Käyttäjätunnus
+          input(type='text', name='username', data-bind='validation: validation.username')
+          span.error.hidden Käyttäjätunnuksen tulee olla vähintään 3 merkkiä ja enintään 20 merkkiä pitkä
+        .input-item
+          label Sähköpostiosoite
+          input(type='email', name='email', data-bind='validation: validation.email')
+            span.error.hidden Käyttäjätunnuksen tulee olla vähintään 3 merkkiä ja enintään 20 merkkiä pitkä
+        .input-item
+          label Salasana
+          input(type='password', name='password', data-bind='validation: validation.password')
+            span.error.hidden Salasanan tulee olla vähintään 6 merkkiä pitkä
+        .input-item 
+          input.btn.btn-green(type='submit', value='Luo käyttäjätunnus')
+        hr
+
+
+    .btn-open-panel(data-bind='click: togglePanel')
+      i(data-bind='css: { "hidden": !panelOpen() }', class='hidden') &#xF02A;
+      i(data-bind='css: { "hidden": panelOpen }', class='hidden') &#xF02B;
     script(type='text/javascript')
       require(['app'], function(app){ app.main() })
 
