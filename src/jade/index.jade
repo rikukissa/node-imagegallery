@@ -22,6 +22,35 @@ html
       #filelist(data-bind='foreach: posts, visible: currentView() == "default"')
         img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
       
+      #user(data-bind='visible: currentView() == "user", with: currentUser')
+        .user-info-panel
+          .user-username(data-bind='text: $data.username()')
+          hr
+          .user-info.user-post-count
+            span Tiedostoja yhteensä: 
+            span(data-bind='text: $data.posts().length')
+          .user-info.user-albums
+            span Albumeja yhteensä: 
+            span(data-bind='text: $data.albums().length')
+          .user-info.user-joined
+            span Rekisteröitynyt: 
+            span(data-bind='text: moment($data.created()).format("DD.MM.YYYY HH:mm:SS")')
+        
+        .user-posts
+          .user-albums(data-bind='foreach: $data.albums')
+            .album
+              h3(data-bind='text: $data.title')
+              .album-posts(data-bind='foreach: $parent.posts')
+                // ko if: $data.album() == $parent._id()
+                img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
+                // /ko  
+          h3 Luokittelemattomat kuvat
+          .user-unsorted(data-bind='foreach: $data.posts')
+            // ko if: $data.album() == null
+            img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
+            // /ko  
+      
+
       #post(data-bind='visible: currentView() == "post", with: currentPost')
         .post-preview
           a(data-bind='attr: {href: "/static/" + $data.filename() }')
@@ -29,16 +58,52 @@ html
         .post-info
           | Lähetetty 
           span(data-bind='text: moment($data.created()).format("DD.MM.YYYY")')
-          
-
+        form.post-comment(data-bind='submit: $root.submitComment')
+          input(type='text', name='comment', placeholder='kommentoi..')
+          input.btn.btn-green(type='submit', value='Lähetä')
+        div.post-comments(data-bind='foreach: $data.comments')
+          div.comment
+            a.comment-username(href='#', data-bind='text: $root.getUser($data.user).username')
+            span.comment-timestamp(data-bind='text: moment($data.created()).format("DD.MM.YYYY HH:mm:SS")')
+            span.comment-content(data-bind='text: $data.content')
     .panel
-      form.upload(data-bind='with: user')
+      iframe(name='_iframe')
+      form.upload(target='_iframe', action='/post', method='post', data-bind='with: user', enctype='multipart/form-data')
         .input-item.input-upload
           .btn.btn-green 
             | Valitse tiedosto
-            input(type='file', name='post', data-bind='fileUpload: $root.uploaded')
+            input(type='file', name='post')
+        .input-item(data-bind='visible: $data.albums().length > 0')
+          label Valitse albumi
+          select(name='album', data-bind='foreach: $data.albums')
+            // ko if: $index() == 0
+            option(data-bind='')
+            // /ko
+            option(data-bind='text: $data.title, attr: { value: $data.id }')
+        .input-item
+          label Luo uusi albumi
+          input(type='text', name='create_album')
 
-      form(data-bind='visible: !user(), submit: signin')
+        .input-item
+          input.btn.btn-blue(type='submit', name='create_album', data-bind='click: $root.uploadPost', value='Tallenna')
+      
+      div.options.post-options(data-bind='with: $root.user, visible: $root.currentView() == "post"')
+        div(data-bind='if: $data.id == $root.currentPost.user')
+          hr
+          h4 Muokkaa
+          ul
+            li: a(href='#', data-bind='click: $root.removePost') Poista
+            li: a(href='#', data-bind='click: $root.movePost') Siirrä albumiin      
+
+      div.options.user-options(data-bind='with: $root.user, visible: $root.currentView() == "user"')
+        div(data-bind='if: $data.id == $root.currentUser.id')
+          hr
+          h4 Profiili
+          ul
+            li: a(href='#', data-bind='click: $root.logout') Kirjaudu ulos
+          
+
+      form(data-bind='visible: user() == null, submit: signin')
         .input-item.input-info
           h3 Kirjaudu sisään
           | Kirjaudu sisään lähettääksesi kuvia
@@ -56,7 +121,7 @@ html
             | Käyttäjätunnus ja salasana eivät täsmää
         hr
 
-      form(data-bind='visible: !user(), submit: signup')
+      form(data-bind='visible: user() == null, submit: signup')
         .input-item.input-info
           h3 Luo uusi käyttäjätunnus
           | Kirjaudu sisään lähettääksesi kuvia

@@ -10,7 +10,7 @@ define (require) ->
    
         frame.appendTo el.parent()
         el.wrap form
-        frame.load (e, b)->
+        frame.load (e, b) ->
           frame.off 'load'
           err = null
           try

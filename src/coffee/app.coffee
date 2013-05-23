@@ -54,21 +54,37 @@ define (require) ->
         @socket = io.connect('http://localhost')
         @socket.on 'new post', (post) => 
           @posts.collection().unshift post
+        
+        @socket.on 'post update', (post) =>
+          @currentPost().comments ko.mapping.fromJS(post.comments)()
 
         # User
         @user = ko.observable null
+        @allUsers = []
 
         $.ajax
           dataType: 'json'
           url: "/user"
           success: (user) =>
-            @user ko.mapping.fromJS user if user.hasOwnProperty 'username'
-            
+            @user ko.mapping.fromJS user
           error: -> console.log arguments
+
+        $.ajax
+          dataType: 'json'
+          url: "/users"
+          success: (users) => @allUsers = users
+          error: -> console.log arguments      
+
+
+        # Computed values
+        @getUser = (id) =>
+          return _.findWhere @allUsers, _id: id()
+          
 
         # View
         @currentView = ko.observable 'default'
         @currentPost = ko.observable null
+        @currentUser = ko.observable null
         @panelOpen = ko.observable true
 
         # Collections
@@ -85,8 +101,10 @@ define (require) ->
           username: (element, error, success, clear) ->
             $(element).on('blur', ->
               return error() if $(this).val().length > 20 or $(this).val().length < 3 
-              $.getJSON '/user/username/' + $(this).val(), (users) ->
-                if users.length > 0 then error() else success()
+              $.ajax
+                url: '/validation/username/' + $(this).val()
+                success: success
+                error: error
             ).on 'focus', clear
 
           email: (element, error, success, clear) ->
@@ -119,18 +137,54 @@ define (require) ->
           error: ->
             $(element).find('.error').removeClass 'hidden'
       
+      submitComment: (element) =>
+        $.ajax
+          type: 'POST'
+          data: $(element).serialize()
+          url: "/post/#{@currentPost().id()}/comment"
+          success: () => 
+            $(element).find('input[name="comment"]').val('')
+          error: () => console.log "err", arguments
 
       signup: (element) ->
-        # $.ajax
-        #   type: 'POST'
-        #   data: $(element).serialize()
-        #   url: '/signup'
-        #   success: (user) =>
-        #     @user ko.mapping.fromJS user
-        #   error: -> console.log arguments
+        $.ajax
+          type: 'POST'
+          data: $(element).serialize()
+          url: '/signup'
+          success: (user) =>
+            @user ko.mapping.fromJS user
+          error: -> console.log arguments
+      
+
+      getPost: (id) ->
+        return post for post in @currentUser().posts() when post._id() == id
+
 
       showPost: (post) =>
         @router.navigate 'view/' + post.id(), trigger: true
+
+      showProfile: (user) =>
+        @router.navigate 'profile/' + user.username(), trigger: true
+      
+      removePost: =>
+        $.ajax
+          type: 'DELETE'
+          url: '/post/' + @currentPost().id()
+          success: (user) =>
+            @router.navigate 'profile/' + @user().username(), trigger: true
+          error: -> console.log arguments
+
+      movePost: -> console.log arguments
+
+
+      uploadPost: (obj, e) => 
+        $(e.target).parents('form').submit()
+
+        frame = $('iframe[name="_iframe"]')
+        frame.load => 
+          frame.off 'load'
+          post = JSON.parse frame.contents().text()
+          @router.navigate 'view/' + post.id, trigger: true
 
       viewPost: (hash) ->
         $.ajax
@@ -139,6 +193,18 @@ define (require) ->
           success: (post) =>
             @currentPost ko.mapping.fromJS post
             @currentView 'post'
+          error: ->
+            @router.navigate '404'
+
+      logout: ->
+        $.get '/logout', () -> location.reload()
+      viewProfile: (username) -> 
+        $.ajax
+          dataType: 'json'
+          url: "/user/#{username}"
+          success: (user) =>
+            @currentUser ko.mapping.fromJS user
+            @currentView 'user'
           error: ->
             @router.navigate '404'
 
@@ -151,8 +217,9 @@ define (require) ->
         @posts.collection().fetch(reset: true)
       
       setProfile: ->
-      enterProfile: ->
       
+      enterProfile: (user) => @showProfile user
+
       togglePanel: ->
         if @panelOpen() then @panelOpen false else @panelOpen true
     

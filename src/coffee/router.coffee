@@ -8,7 +8,7 @@ define (require) ->
       "list/:page": "list"
       "album/:hash": "list"
       "view/:hash": "view"
-      "user/:username": "default"
+      "profile/:username": "profile"
       ":page": "notFound"
     
     view: -> @vmo.viewPost.apply @vmo, arguments
@@ -18,6 +18,9 @@ define (require) ->
 
     default: ->
       @vmo.setDefault.apply @vmo, arguments
+    
+    profile: ->
+      @vmo.viewProfile.apply @vmo, arguments
 
     initialize: (@vmo) ->
   return Router

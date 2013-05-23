@@ -1,5 +1,6 @@
 {
   "allowed_filetypes": ["image/jpeg", "image/png", "image/gif"],
   "size_limit": "10mb",
-  "salt": "90sd8fsdfikjsdfsd0"
+  "salt": "90sd8fsdfikjsdfsd0",
+  "secret": "keyboard cat"
 }

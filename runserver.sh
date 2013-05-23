@@ -1,0 +1,1 @@
+supervisor -w src/server -e coffee run.js
