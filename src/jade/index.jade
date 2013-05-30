@@ -12,8 +12,9 @@ html
         nav
           .header-btn(data-bind='click: enterDefault')
             i &#xF161;
-          .header-btn
+          .header-btn(data-bind='click: showProfiles')
             i &#xF045;
+
         nav(data-bind='with: user')
           .header-btn(data-bind='click: $root.enterProfile')
             i &#xF044;
@@ -22,21 +23,14 @@ html
       #filelist(data-bind='foreach: posts, visible: currentView() == "default"')
         img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
       
+      #users(data-bind='visible: currentView() == "profiles"')
+        ul(data-bind='foreach: allUsers')
+          li(data-bind='click: $root.findProfile($data.username)')
+            span.user-username(data-bind='text:username')
+            .actions(data-bind='visible: $root.user() && $root.user().level() == "admin"')
+              i(data-bind='click: $root.removeUser') &#xF14E;
       #user(data-bind='visible: currentView() == "user", with: currentUser')
-        .user-info-panel
-          .user-username(data-bind='text: $data.username()')
-          hr
-          .user-info.user-post-count
-            span Tiedostoja yhteensä: 
-            span(data-bind='text: $data.posts().length')
-          .user-info.user-albums
-            span Albumeja yhteensä: 
-            span(data-bind='text: $data.albums().length')
-          .user-info.user-joined
-            span Rekisteröitynyt: 
-            span(data-bind='text: moment($data.created()).format("DD.MM.YYYY HH:mm:SS")')
-        
-        .user-posts
+        .user-posts(data-bind='visible: $root.currentTab() == "default"')
           .user-albums(data-bind='foreach: $data.albums')
             .album
               h3(data-bind='text: $data.title')
@@ -44,12 +38,32 @@ html
                 // ko if: $data.album() == $parent._id()
                 img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
                 // /ko  
+
           h3 Luokittelemattomat kuvat
           .user-unsorted(data-bind='foreach: $data.posts')
             // ko if: $data.album() == null
             img.thumbnail(data-bind='attr: {src: "/static/thumb/" + $data.filename() }, click: $root.showPost')
             // /ko  
-      
+        
+        .user-settings(data-bind='visible: $root.currentTab() == "settings"')
+          h3 Asetukset
+          form(data-bind='with: $root.user, submit: $root.updateUser')
+            .input-item
+              label Käyttäjätunnus
+              input(type='text', data-bind='value: $data.username')
+            .input-item
+              label Salasana
+              input(type='password', data-bind='value: $data.password')
+            .input-item
+              label Sähköpostiosoite
+              input(type='text', data-bind='value: $data.email')
+            .input-item
+              label Oikeudet
+              span(data-bind='text: $data.level')
+            .input-item
+              input.btn.btn-blue(type='submit', value='Tallenna')
+            .input-item
+              a(href='#', data-bind='click: $root.removeAccount') Poista käyttäjätunnus
 
       #post(data-bind='visible: currentView() == "post", with: currentPost')
         .post-preview
@@ -63,43 +77,67 @@ html
           input.btn.btn-green(type='submit', value='Lähetä')
         div.post-comments(data-bind='foreach: $data.comments')
           div.comment
-            a.comment-username(href='#', data-bind='text: $root.getUser($data.user).username')
+            a.comment-username(href='#', data-bind='click: $root.findProfile($root.getUser($data.user).username),text: $root.getUser($data.user).username')
             span.comment-timestamp(data-bind='text: moment($data.created()).format("DD.MM.YYYY HH:mm:SS")')
             span.comment-content(data-bind='text: $data.content')
+      #not-found(data-bind='visible: currentView() == "notFound"')
+        h1 ?
+        h2 404
+        h3 Jotain meni pieleen
     .panel
-      iframe(name='_iframe')
-      form.upload(target='_iframe', action='/post', method='post', data-bind='with: user', enctype='multipart/form-data')
-        .input-item.input-upload
-          .btn.btn-green 
-            | Valitse tiedosto
-            input(type='file', name='post')
-        .input-item(data-bind='visible: $data.albums().length > 0')
-          label Valitse albumi
-          select(name='album', data-bind='foreach: $data.albums')
-            // ko if: $index() == 0
-            option(data-bind='')
-            // /ko
-            option(data-bind='text: $data.title, attr: { value: $data.id }')
-        .input-item
-          label Luo uusi albumi
-          input(type='text', name='create_album')
+      div(data-bind='visible: currentView() == "user", with: $root.currentUser')
+        .user-info-panel
+          h4.user-username(data-bind='text: $data.username()')
+          ul
+            li.user-info.user-post-count
+              span Tiedostoja yhteensä: 
+              span(data-bind='text: $data.posts().length')
+            li.user-info.user-albums
+              span Albumeja yhteensä: 
+              span(data-bind='text: $data.albums().length')
+            li.user-info.user-joined
+              span Rekisteröitynyt: 
+              span(data-bind='text: moment($data.created()).format("DD.MM.YYYY HH:mm:SS")')
+        hr
+      div(data-bind='visible: currentView() == "default"')
+        iframe(name='_iframe')
+        form.upload(target='_iframe', action='/post', method='post', data-bind='with: user', enctype='multipart/form-data')
+          .input-item.input-preview(data-bind='with: $root.selectedFile')
+            div(data-bind='with: $data.src')
+              img(data-bind='attr: {src: $data}')
+            div(data-bind='text: $data.name')
+            hr
+          .input-item.input-upload
+            .btn.btn-green(data-bind='fileInput: { target: $root.selectedFile }')
+              | Valitse tiedosto
+              input(type='file', name='post')
+          .input-item(data-bind='visible: $data.albums().length > 0')
+            label Valitse albumi
+            select(name='album', data-bind='foreach: $data.albums')
+              // ko if: $index() == 0
+              option(data-bind='')
+              // /ko
+              option(data-bind='text: $data.title, attr: { value: $data.id }')
+          .input-item
+            label Luo uusi albumi
+            input(type='text', name='create_album')
 
-        .input-item
-          input.btn.btn-blue(type='submit', name='create_album', data-bind='click: $root.uploadPost', value='Tallenna')
-      
+          .input-item
+            input.btn.btn-blue(type='submit', name='create_album', data-bind='click: $root.uploadPost', value='Tallenna')
+        
       div.options.post-options(data-bind='with: $root.user, visible: $root.currentView() == "post"')
         div(data-bind='if: $data.id == $root.currentPost.user')
-          hr
           h4 Muokkaa
           ul
             li: a(href='#', data-bind='click: $root.removePost') Poista
             li: a(href='#', data-bind='click: $root.movePost') Siirrä albumiin      
+          hr
 
       div.options.user-options(data-bind='with: $root.user, visible: $root.currentView() == "user"')
         div(data-bind='if: $data.id == $root.currentUser.id')
-          hr
           h4 Profiili
           ul
+            li: a(href='#', data-bind='click: $root.showSettings') Asetukset
             li: a(href='#', data-bind='click: $root.logout') Kirjaudu ulos
           
 
@@ -145,6 +183,7 @@ html
     .btn-open-panel(data-bind='click: togglePanel')
       i(data-bind='css: { "hidden": !panelOpen() }', class='hidden') &#xF02A;
       i(data-bind='css: { "hidden": panelOpen }', class='hidden') &#xF02B;
+    .notification(data-bind='visible: $root.notificationMessage() != null, text: $root.notificationMessage, css: $root.notificationType')
     script(type='text/javascript')
       require(['app'], function(app){ app.main() })
 

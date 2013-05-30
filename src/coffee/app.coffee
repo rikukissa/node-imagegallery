@@ -8,6 +8,7 @@ require.config
     'knockback': '../vendor/knockback'
     'mapping': '../vendor/mapping'
     'moment': '../vendor/moment'
+    'async': '../vendor/async'
   
   shim:
     'underscore': 
@@ -25,14 +26,14 @@ define (require) ->
   $ = require('jquery')
   ko = require('knockout')
   kb = require('knockback')
+  async = require('async')
   moment = require('moment')
   Backbone = require('backbone')
   ko.mapping = require('mapping')
   customBindings = require('customBindings')
 
-
-
   main: () ->
+    $.ajaxSetup cache: false
     class Post extends Backbone.Model
       defaults:
         id: null
@@ -60,29 +61,17 @@ define (require) ->
 
         # User
         @user = ko.observable null
-        @allUsers = []
-
-        $.ajax
-          dataType: 'json'
-          url: "/user"
-          success: (user) =>
-            @user ko.mapping.fromJS user
-          error: -> console.log arguments
-
-        $.ajax
-          dataType: 'json'
-          url: "/users"
-          success: (users) => @allUsers = users
-          error: -> console.log arguments      
+        @allUsers = ko.observableArray []   
 
 
         # Computed values
         @getUser = (id) =>
-          return _.findWhere @allUsers, _id: id()
+          return _.findWhere @allUsers(), _id: id()
           
 
         # View
         @currentView = ko.observable 'default'
+        @currentTab  = ko.observable null
         @currentPost = ko.observable null
         @currentUser = ko.observable null
         @panelOpen = ko.observable true
@@ -90,11 +79,17 @@ define (require) ->
         # Collections
         @posts = kb.collectionObservable new PostsCollection(), kb.ViewModel
 
-        # Router
-        Router = require('router')
-        @router = new Router(@)
-        Backbone.history.start pushState: if history.pushState? then true else false
+
       
+
+        # File input
+        @selectedFile = ko.observable null
+
+
+        # Notifications
+        @notificationTimeout = null
+        @notificationMessage = ko.observable null
+        @notificationType = ko.observable null
 
         # Validation
         @validation =
@@ -120,11 +115,14 @@ define (require) ->
               success()
             ).on 'focus', clear
 
-      organize: ->
-        console.log 'e'
-
-      uploaded: (err, data) ->
-        #console.log err, data
+      showNotification: (msg, type) =>
+        clearTimeout @notificationTimeout if @notificationTimeout?
+        @notificationMessage msg
+        @notificationType type
+        @notificationTimeout = setTimeout =>
+          @notificationMessage null
+          @notificationType null
+        , 4000
 
       signin: (element) ->
         $(element).find('.error').addClass 'hidden'
@@ -133,10 +131,22 @@ define (require) ->
           data: $(element).serialize()
           url: '/signin'
           success: (user) =>
+            user.password = ""
             @user ko.mapping.fromJS user
           error: ->
             $(element).find('.error').removeClass 'hidden'
       
+      removeUser: (user, e) =>
+        e.stopPropagation()
+        if confirm "Haluatko varmasti poistaa käyttäjän #{user.username}?" 
+          $.ajax
+            type: 'POST'
+            data: 
+              id: user._id
+            url: "/user/remove"
+            success: (users) => 
+              @allUsers users
+            error: () => console.log "err", arguments        
       submitComment: (element) =>
         $.ajax
           type: 'POST'
@@ -159,13 +169,24 @@ define (require) ->
       getPost: (id) ->
         return post for post in @currentUser().posts() when post._id() == id
 
-
       showPost: (post) =>
         @router.navigate 'view/' + post.id(), trigger: true
+
+      findProfile: (username) => () => 
+        @router.navigate 'profile/' + username, trigger: true
 
       showProfile: (user) =>
         @router.navigate 'profile/' + user.username(), trigger: true
       
+      showProfiles: () => 
+        @router.navigate 'profiles/', trigger: true
+      
+      viewProfiles: () =>
+        @currentView 'profiles'
+
+      showSettings: (user) =>
+        @router.navigate "profile/#{user.username()}/settings", trigger: true
+
       removePost: =>
         $.ajax
           type: 'DELETE'
@@ -196,18 +217,42 @@ define (require) ->
           error: ->
             @router.navigate '404'
 
-      logout: ->
-        $.get '/logout', () -> location.reload()
-      viewProfile: (username) -> 
+      viewNotFound: () =>
+        @currentView "notFound"
+
+      viewSettings: (username) ->
+        return @router.navigate '404' unless @user()?
+
+        if !@currentUser()
+          @viewProfile username, =>
+            @currentTab 'settings'
+        else
+          @currentView 'user'
+          @currentTab 'settings'
+
+      viewProfile: (username, cb) -> 
         $.ajax
           dataType: 'json'
           url: "/user/#{username}"
           success: (user) =>
             @currentUser ko.mapping.fromJS user
             @currentView 'user'
-          error: ->
+            @currentTab 'default'
+            cb?()
+          error: =>
             @router.navigate '404'
 
+      logout: ->
+        $.get '/logout', () -> location.reload()
+
+      removeAccount: ->
+        if confirm "Haluatko varmasti poistaa käyttäjätunnuksesi?"
+          $.ajax
+            type: 'POST'
+            url: "/user/remove/me"
+            success: () => 
+              location.reload()
+            error: () => console.log "err", arguments          
 
       enterDefault: ->
         @router.navigate "", trigger: true
@@ -217,11 +262,51 @@ define (require) ->
         @posts.collection().fetch(reset: true)
       
       setProfile: ->
-      
+      getProfile: (user) => () =>  @showProfile user
       enterProfile: (user) => @showProfile user
 
       togglePanel: ->
         if @panelOpen() then @panelOpen false else @panelOpen true
-    
-    vmo = new ViewModel()
-    ko.applyBindings vmo
+
+      updateUser: (element) =>
+        $.ajax
+          type: 'post'
+          dataType: 'json'
+          url: "/user"
+          data: ko.mapping.toJS @user
+          success: (user) => @showNotification "Käyttäjätiedot tallennettu", "success"
+          error: => @showNotification "Jotain meni pieleen", "error"
+
+    async.parallel [
+      (done) ->
+        $.ajax
+          dataType: 'json'
+          url: "/user"
+          success: (user) => done null, user
+          error: -> done null
+    ,
+      (done) ->
+        $.ajax
+          dataType: 'json'
+          url: "/users"
+          success: (users) => 
+            done null, users
+          error: -> done null
+    ], (err, results) ->
+      [user, users] = results
+
+      vmo = new ViewModel()
+      
+      if user?
+        user.password = ko.observable ""
+        vmo.user ko.mapping.fromJS user 
+      
+      vmo.allUsers users
+
+      # Router
+      Router = require('router')
+      vmo.router = new Router vmo
+      Backbone.history.start pushState: if history.pushState? then true else false
+
+      # Initialize
+      ko.applyBindings vmo

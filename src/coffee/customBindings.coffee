@@ -27,6 +27,23 @@ define (require) ->
           e.stopPropagation()
         ).submit()
 
+  ko.bindingHandlers.fileInput =
+    init: (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) ->
+      params = valueAccessor()
+      $(element).find('input').on 'change', (e) ->
+        return if e.target.files.length == 0
+        file = e.target.files[0]
+
+        file.src = null
+      
+        if file.type.match('image.*') && window.FileReader?
+          reader = new FileReader()
+          reader.onload = (e) -> 
+            file.src = e.target.result
+            params.target file if params.target?
+          return reader.readAsDataURL(file)
+        
+        params.target file if params.target?
   ko.bindingHandlers.validation =
     init: (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) ->
       error = ->

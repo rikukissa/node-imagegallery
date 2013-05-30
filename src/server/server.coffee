@@ -3,11 +3,13 @@ _             = require('underscore')
 fs            = require('fs')
 express       = require('express')
 mongoose      = require('mongoose')
-crypto        = require('crypto')
 imagemagick   = require('node-imagemagick')
-
+MongoStore    = require('connect-mongo')(express)
 passport      = require('passport')
 LocalStrategy = require('passport-local').Strategy
+
+crypto        = require('crypto')
+
 
 sha256 = (str, salt) ->
   crypt = crypto.createHash('sha256')
@@ -16,6 +18,8 @@ sha256 = (str, salt) ->
 
 module.exports.createServer = (config) ->
   mongoose.connect 'mongodb://localhost/uploads'
+  
+  User = require('./user')(config)
   
   ObjectId = mongoose.Schema.Types.ObjectId
 
@@ -56,38 +60,6 @@ module.exports.createServer = (config) ->
     posts: [type: ObjectId, ref: 'Post']
 
   Album = mongoose.model 'Album', albumSchema
-
-  userSchema = new mongoose.Schema
-    username:
-      type: String
-      index: 
-        unique: true
-    password: String
-    email: String
-    posts: [type: ObjectId, ref: 'Post']
-    albums: [type: ObjectId, ref: 'Album']
-    created: 
-      type: Date
-      default: () -> Date.now()
-
-  userSchema.methods =
-    verifyPassword: (password) ->
-      return sha256(password, config.salt) == @password
-
-  userSchema.statics =
-    authenticate: (username, password, cb) -> 
-      @findOne {username: username}, (err, user) ->
-        message = if !user?
-          'Incorrect username'
-        else if !user.verifyPassword(password)
-          user = null
-          'Incorrect password'
-        else
-          ''
-        console.log message
-        cb(err, user, message)
-
-  User = mongoose.model 'User', userSchema
   
   app     = express()
   httpd   = require('http').createServer(app)
@@ -95,11 +67,19 @@ module.exports.createServer = (config) ->
   
   app.configure ->
     app.use express.cookieParser()
+    
     app.use express.limit(config.size_limit)
+    
     app.use express.bodyParser
       uploadDir: config.rootDir + '/public/static/'
       keepExtensions: true
-    app.use express.session secret: config.secret
+    
+    app.use express.session 
+      secret: config.secret
+      store: new MongoStore(db: mongoose.connection.db, (err) -> 
+        console.log err || 'MongoStore ok'
+      )
+
     app.use express.static config.rootDir + '/public/'   
 
     app.use passport.initialize()
@@ -117,10 +97,9 @@ module.exports.createServer = (config) ->
       User.findById id, (err, user) ->
         done err, user
 
-
-
   # Routes
   app.post '/signin', passport.authenticate('local'), (req, res) ->
+    delete req.user.password
     res.status(200).send req.user
   
   app.get '/logout', (req, res) ->
@@ -155,20 +134,59 @@ module.exports.createServer = (config) ->
       if user? then res.send 403 else res.send 200
 
 
-  app.get '/user', (req, res) ->
+  app.post '/user', (req, res) ->
+    return res.send 403 if not req.user? 
 
-    return res.send 404 if not req.user? 
-    User.findOne(_id: req.user._id).populate('albums').populate('posts').exec().then (user) ->
+    User.findOne(_id: req.user._id).exec().then (user) ->
+      return res.send 404 unless user?
+
+      for field in ['username', 'password', 'email']
+        value = req.body[field]
+        continue if value == ""
+
+        value = sha256(value, config.salt) if field == "password"
+          
+        req.user[field] = value
+
+      req.user.save (err, user) ->
+        return console.log err if err?
+        res.status(200).send(user)
+
+  app.get '/user', (req, res) ->
+    return res.send 403 if not req.user? 
+    User.findOne(_id: req.user._id).select(password: false).populate('albums').populate('posts').exec().then (user) ->
       if user? then res.send user else res.send 404
   
+  app.post '/user/remove', (req, res) ->
+    return res.send 403 if not req.user? or req.user.level != "admin"
+
+    User.findOne(_id: req.body.id).exec().then (user) ->
+
+      Post.remove(user: user._id).exec()
+      Album.remove(user: user._id).exec()
+      user.remove (err, u) ->
+        User.find().select(password: false).exec().then (users) ->
+          return console.log err if err?
+          res.status(200).send users
+  
+  app.post '/user/remove/me', (req, res) ->
+    return res.send 403 if not req.user?
+
+    # Remove posts & albums
+    Post.remove(user: req.user._id).exec()
+    Album.remove(user: req.user._id).exec()
+    req.user.remove (err, user) -> res.send 200
+
+
+
   app.get '/users', (req, res) ->
-    User.find (err, users) ->
+    User.find().select(password: false).exec().then (users) ->
       return console.log err if err?
       res.send users
 
   app.get '/user/:username', (req, res) ->
-    User.findOne(username: req.params.username).populate('albums').populate('posts').exec().then (user) ->
-      if user? then res.send user else res.send 404
+    User.findOne(username: req.params.username).select(password: false).populate('albums').populate('posts').exec().then (user) ->
+      if user? then res.send user else res.send 403
 
   app.get '/posts', (req, res) ->
     Post.find().sort( created: -1 ).exec (err, arr) ->
@@ -208,7 +226,6 @@ module.exports.createServer = (config) ->
         res.status(201).send post 
 
   app.post '/post', (req, res) ->
-
     return res.send 404 if not req.files.post?
     return res.send 403 if not req.user?
 
@@ -226,6 +243,7 @@ module.exports.createServer = (config) ->
       res.send 404
 
     save = ->
+
       # Validate file type
       if config.allowed_filetypes.indexOf(file.type) == -1 
         return error("Unknown filetype: #{file.type}")
@@ -293,6 +311,7 @@ module.exports.createServer = (config) ->
         album = a
         save()
 
+    return save()
 
 
   app.get '/albums', (req, res) ->

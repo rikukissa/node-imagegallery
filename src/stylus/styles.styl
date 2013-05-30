@@ -34,7 +34,10 @@ hr
   border-top 1px dashed rgba(0, 0, 0, 0.2)
   border-bottom 1px dashed rgba(255, 255, 255, 1)
   margin 30px 0
-
+h3
+  font-weight normal
+  font-size 16px
+  color #bbb
 
 .hidden
   display none
@@ -147,9 +150,9 @@ body.panel-open
 
 .input-item
   margin 20px 0
-  text-align center
   font-size 12px
   color #444
+  text-align center
   select
     display block
     width 100%
@@ -174,17 +177,17 @@ body.panel-open
     &.success
       background rgba(0, 255, 0, 0.1)
       border 1px solid rgba(0, 255, 0, 0.3)
-  h3
-    font-weight normal
-    font-size 16px
-
+  &.input-preview
+    img
+      max-width 100%
+      max-height 200px
   span.error 
     color #da4f49
     i
       margin-right 5px
   .btn
     width 100%
-    padding 10px 0
+    padding 10px 30px
     position relative
   &.input-upload
     input
@@ -212,18 +215,19 @@ body.panel-open
   box-shadow inset 3px 0 3px rgba(0, 0, 0, 0.02)
   transform translate3d(400px, 0, 0)
   transition all 0.6s
+  h4
+    color #666
+    font-size 16px
+    margin-bottom 0
+    font-weight normal
+  ul
+    list-style none
+    padding-left 20px
+    li
+      padding 4px 0
   .options
-    a, h4
+    a
       font-weight normal
-    h4
-      color #666
-      font-size 16px
-      margin-bottom 0
-    ul
-      list-style none
-      padding-left 20px
-      li
-        padding 4px 0
 body.panel-open .panel
   transform translate3d(0, 0, 0)
 
@@ -295,6 +299,7 @@ body.panel-open .panel
 #filelist
   overflow hidden
   background #fff
+  padding 20px
   .thumbnail
     width 10%
     min-width 100px
@@ -334,8 +339,55 @@ body.panel-open .panel
   &:nth-child(even)
     background transparent 
 
-#user
+.notification 
+  position fixed
+  bottom 5px
+  width 50%
+  left 25%
+  text-align center 
   padding 10px
+  border-radius 3px
+  box-shadow inset 1px 1px 0 rgba(255, 255, 255, 0.4), 1px 1px 1px rgba(0, 0, 0, 0.05)
+  text-shadow 1px 1px 0 rgba(255, 255, 255, 0.4)
+  &.success
+    background rgba(0, 200, 0, 0.1)
+    color rgba(0, 100, 0, 0.8)
+    border 1px solid rgba(0, 100, 0, 0.2)
+  &.error
+    background rgba(200, 0, 0, 0.1)
+    color rgba(100, 0, 0, 0.8)
+    border 1px solid rgba(100, 0, 0, 0.2)
+#not-found
+  text-align center
+
+  h1
+    font-size 100px
+    color #ddd
+  h2
+    font-size 50px
+    color #ccc
+#users
+  ul
+    margin 20px
+    list-style none
+    padding 0
+  li
+    cursor pointer
+    padding 10px
+    background rgba(95, 203, 223, 0.2)
+    border 1px solid rgba(95, 203, 223, 0.3)
+    color #317e9a
+    border-radius 3px
+    margin 10px 0
+  i
+    display inline-block
+  .actions
+    float right
+
+#user
+  overflow hidden
+  padding 10px
+  position relative 
   .user-info
     margin 5px 0
     color #333
@@ -350,21 +402,14 @@ body.panel-open .panel
     margin-bottom 10px
   hr
     margin 10px 0
-  .user-info-panel
-    width 20%
-    min-height 400px
-    padding 20px
-    background #f9f9f9
-    border 1px solid #ccc
-    float left
-    box-shadow inset 1px 1px 0 #fff, inset -1px -1px rgba(0, 0, 0, 0.03)
-  .user-posts
+
+  .user-posts, .user-settings
     width 80%
     padding 20px
     float left
-    h3
-      color #bbbbbb
-      font-size 16px
+
+  .btn
+    width auto
 input[type='text']
   height 29px
   border 1px solid #ccc
